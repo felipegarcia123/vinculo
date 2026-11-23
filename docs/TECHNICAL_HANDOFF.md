@@ -4,7 +4,7 @@
 
 Vínculo is an independent digital loyalty MVP for neighborhood stores. The demo supports owner, cashier, and customer roles; short-lived QR challenges; fictional purchases; stamp accrual; reward redemption; and owner-facing loyalty metrics. The cashier flow does not create POS sales or move money or inventory. Campaigns remain drafts. Deterministic rules own all metrics; an optional LLM may explain supplied aggregates and is disabled by default.
 
-The standalone extraction is ready for local team development. No GitHub repository, hosted deployment, or production environment is configured by this baseline.
+The standalone extraction is ready for local team development. Its private GitHub repository is [felipegarcia123/vinculo](https://github.com/felipegarcia123/vinculo). This handoff does not configure a hosted application deployment or production environment.
 
 ## Architecture
 
@@ -45,7 +45,7 @@ Never copy real credentials into a local environment file or commit it. `.env`, 
 
 ## Current risks and boundaries
 
-- Hosted deployment wiring and a private GitHub repository remain to be configured after review.
+- Hosted deployment wiring remains out of scope for this baseline. The GitHub repository exists; branch-protection settings still need remote verification and configuration.
 - The baseline does not support multiple evaluators with independent simultaneous data, account recovery, or production identity verification.
 - Retention, deletion, member analytics consent, and audit history for rule changes need product and privacy decisions.
 - PostgreSQL is required for migration validation and realistic rate-limit integration tests. SQLite is only for isolated API tests.
@@ -65,6 +65,6 @@ Agree on API contracts and fixtures before parallel UI/domain changes. Metrics r
 
 ## GitHub collaboration proposal
 
-Create a private repository named `Vinculo` (or `vinculo`) containing this project only. Protect `main`: require pull requests, passing CI, one approval, stale-approval dismissal, and no force push or branch deletion. Require a second reviewer for auth, schema, data-retention, or security changes. Use `feat/<area>-<summary>`, `fix/<area>-<summary>`, and `docs/<summary>` branches. Keep deployments and secrets outside GitHub source; developer access should not include production or shared database administration.
+The private repository is [felipegarcia123/vinculo](https://github.com/felipegarcia123/vinculo) and contains this project only. Configure `main` to require pull requests, passing CI, one approval, stale-approval dismissal, and no force push or branch deletion when the account plan permits. Require a second reviewer for auth, schema, data-retention, or security changes. Use `feat/<area>-<summary>`, `fix/<area>-<summary>`, and `docs/<summary>` branches. Keep deployments and secrets outside GitHub source; developer access should not include production or shared database administration. The current remote protection state has not been verified from this local checkout.
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the review checklist. Do not include the local-only Comprefácil archive or historical source handoff files in the new repository.
