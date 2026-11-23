@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import os
 import secrets
 from contextvars import ContextVar
 from datetime import datetime, timedelta, timezone
@@ -108,20 +109,27 @@ def new_session(db: Session, user: User) -> tuple[str, str, datetime]:
     return raw_token, raw_csrf, expires
 
 
-def set_session_cookies(response, request: Request, raw_token: str, raw_csrf: str, expires: datetime) -> None:
+def _secure_cookie(request: Request) -> bool:
     from app.core.config import settings
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
-    is_https = request.url.scheme == "https" or forwarded_proto == "https"
-    common = {"secure": settings.auth_cookie_secure and is_https,
+    # Do not trust X-Forwarded-Proto: the app cannot prove every upstream proxy
+    # overwrites client-supplied values. Use the ASGI scheme, Vercel's
+    # deployment-controlled system variable, or explicit operator config.
+    return (
+        request.url.scheme.lower() == "https"
+        or os.getenv("VERCEL") == "1"
+        or settings.auth_cookie_secure
+    )
+
+
+def set_session_cookies(response, request: Request, raw_token: str, raw_csrf: str, expires: datetime) -> None:
+    common = {"secure": _secure_cookie(request),
               "samesite": "lax", "path": "/"}
     response.set_cookie(SESSION_COOKIE, raw_token, httponly=True, max_age=SESSION_HOURS * 3600, **common)
     response.set_cookie(CSRF_COOKIE, raw_csrf, httponly=False, max_age=SESSION_HOURS * 3600, **common)
 
 
 def delete_session_cookies(response, request: Request) -> None:
-    from app.core.config import settings
-    forwarded_proto = request.headers.get("x-forwarded-proto", "").split(",", 1)[0].strip().lower()
-    secure = settings.auth_cookie_secure and (request.url.scheme == "https" or forwarded_proto == "https")
+    secure = _secure_cookie(request)
     response.delete_cookie(SESSION_COOKIE, path="/", secure=secure, httponly=True, samesite="lax")
     response.delete_cookie(CSRF_COOKIE, path="/", secure=secure, httponly=False, samesite="lax")
 
