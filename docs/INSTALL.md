@@ -68,3 +68,8 @@ npm run build
 | `NEXT_PUBLIC_API_URL` | Local API origin; hosted deployments use `/api/v1` on the same HTTPS origin. |
 | `LOYALTY_LLM_ENABLED`, `LOYALTY_LLM_API_KEY` | Optional, off by default; request explanations only, no campaign delivery. |
 | `VINCULO_ALLOW_LOCAL_SEED` and role username/password variables | Explicit local-only fictional seed controls. |
+
+For a future isolated hosted demo, see [DEPLOYMENT.md](DEPLOYMENT.md). The
+remote one-shot seed is separate from `seed_local.py`, requires a newly
+provisioned Neon project/database and interactive hidden password entry, and
+does not run migrations.
