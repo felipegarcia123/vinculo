@@ -1,4 +1,13 @@
+import { fetchWithTimeout } from "@/lib/fetchWithTimeout.mjs";
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000/api/v1" : "/api/v1");
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const csrf = typeof document === "undefined" ? "" : document.cookie.split(";").map(v => v.trim())
@@ -6,10 +15,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const method = (init?.method ?? "GET").toUpperCase();
   const headers: Record<string, string> = { "Content-Type": "application/json", ...(init?.headers as Record<string, string> | undefined) };
   if (csrf && !["GET", "HEAD", "OPTIONS"].includes(method)) headers["X-CSRF-Token"] = decodeURIComponent(csrf);
-  const response = await fetch(`${API}${path}`, { ...init, credentials: "include", headers, cache: "no-store" });
+  const response = await fetchWithTimeout(`${API}${path}`, { ...init, credentials: "include", headers, cache: "no-store" });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(typeof body?.detail === "string" ? body.detail : "No fue posible completar la solicitud.");
+    throw new ApiError(typeof body?.detail === "string" ? body.detail : "No fue posible completar la solicitud.", response.status);
   }
   if (response.status === 204) return undefined as T;
   return response.json() as Promise<T>;
