@@ -35,7 +35,7 @@ from app.models import (
 
 BASELINE_REVISION = "0001_vinculo_baseline"
 EXPECTED_DATABASE = "vinculo_demo"
-EXPECTED_PROJECT_SLUG = "vinculo-public-demo"
+EXPECTED_PROJECT_SLUG = "vinculo-preview"
 TABLES = {
     "alembic_version", "auth_sessions", "login_attempt_events", "loyalty_members",
     "loyalty_programs", "loyalty_purchases", "loyalty_redemptions", "loyalty_rewards",

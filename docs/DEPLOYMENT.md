@@ -85,81 +85,68 @@ as a runtime system variable; confirm system variables are exposed in the
 target project. Keep `AUTH_COOKIE_SECURE=true` in Preview as defense in depth.
 Plain local loopback HTTP remains compatible with `AUTH_COOKIE_SECURE=false`.
 
-## Create the isolated demo database later
+## Seed the isolated Preview demo
 
-Do these steps only after the project owner authorizes infrastructure
-provisioning:
+The dedicated Neon target is already provisioned and migrated. Use only this
+target for the one-time fictional seed:
 
-1. Create a new Neon project named vinculo-public-demo; do not select, branch,
-   or reuse any existing Vínculo or Comprefácil project.
-2. Create a dedicated database named vinculo_demo on the intended demo branch.
-   Record the project ID, branch ID/name, and direct write endpoint host. Verify
-   these values in Neon before any command that changes data.
-3. Keep a direct TLS URL for one-time migration/seed operations. Use a pooled
-   TLS URL for the serverless API runtime. Do not put either URL in Git, shell
-   history, tickets, or chat.
-4. In a local zsh terminal, read the direct URL with echo disabled, then set
-   the migration URL in that terminal session:
+- Project `vinculo-preview`, ID `green-credit-84686249`.
+- Branch `production`, ID `br-young-sea-begys0tt`.
+- Database `vinculo_demo`, role `vinculo_demo_owner`.
+- Direct write endpoint `ep-billowing-sound-becjeed5.c-9.us-east-2.aws.neon.tech`.
+- Schema revision `0001_vinculo_baseline`.
 
-       read -s 'VINCULO_SEED_DATABASE_URL?Direct Neon URL: '; echo
-       export VINCULO_SEED_DATABASE_URL
-       export DATABASE_URL="$VINCULO_SEED_DATABASE_URL"
+Do not reuse another Vínculo or Comprefácil project. Do not use a pooled URL
+for the seed. Neon CLI can generate the direct URL with TLS verification; do
+not run the command by itself because it prints the URL. Keep it in a shell
+variable only. On this Mac, Psycopg 3 uses the system certificate store for
+`verify-full`:
 
-   The commands entered into shell history contain no secret values. Clear
-   both variables when finished. Do not run the migration until the project,
-   branch, host, database, and empty state have all been independently checked.
-5. Populate the non-secret identifiers from the values independently verified
-   in Neon. Check the destination and empty schema with SQL that does not
-   display the URL:
+    cd apps/api
+    export VINCULO_SEED_DATABASE_URL="$(.venv/bin/python -c 'import subprocess; from sqlalchemy.engine import make_url; r=subprocess.run(["neon","connection-string","production","--project-id","green-credit-84686249","--database-name","vinculo_demo","--role-name","vinculo_demo_owner","--endpoint-type","read_write","--ssl","verify-full"],capture_output=True,text=True,check=True); u=make_url(r.stdout.strip()); q=dict(u.query); q["sslrootcert"]="system"; print(u.set(drivername="postgresql+psycopg",query=q).render_as_string(hide_password=False))')"
 
-       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'SELECT current_database(), current_user'
-       psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c "SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public'"
+The seed's Neon control-plane check requires a temporary project-scoped API
+key. Create one for project `green-credit-84686249` in Neon Console or with
+`neon api-keys create --name vinculo-demo-seed-once --project-id green-credit-84686249`.
+The CLI shows the key only once; enter it through a hidden Terminal prompt and
+never place it in shell history, Git, tickets, or chat. Record the key ID
+separately so it can be revoked immediately after the operation.
 
-   Confirm the database name and that the public schema had no application
-   tables. Never continue if either output differs. Then, from the repository
-   root, run:
+Set only the verified, non-secret identifiers and one-shot opt-in in this
+Terminal session:
 
-       cd apps/api
-       uv run --locked alembic -c alembic.ini upgrade head
+    export VINCULO_REMOTE_SEED_ENABLED=true
+    export VINCULO_SEED_PROJECT_SLUG=vinculo-preview
+    export VINCULO_SEED_PROJECT_ID=green-credit-84686249
+    export VINCULO_SEED_BRANCH_ID=br-young-sea-begys0tt
+    export VINCULO_SEED_BRANCH_NAME=production
+    export VINCULO_SEED_ALLOWED_HOST=ep-billowing-sound-becjeed5.c-9.us-east-2.aws.neon.tech
+    export VINCULO_SEED_ALLOWED_DATABASE=vinculo_demo
+    read -s 'NEON_API_KEY?Temporary project-scoped Neon API key: '; echo
+    export NEON_API_KEY
 
-   The independent
-   project has one frozen migration, 0001_vinculo_baseline; it is exclusively
-   for a new, empty Vínculo database and must never be applied to Comprefácil or
-   an existing database.
-6. Set the seed's direct URL, identifiers, and one-shot opt-in. Enter the Neon
-   API key through a hidden terminal prompt. Prefer a short-lived,
-   project-scoped Neon key if the account supports it:
+Then run `.venv/bin/python -m app.scripts.seed_remote_demo`. Before inserting,
+the script checks the project, branch, and exact write endpoint through Neon’s
+API; verifies the direct host, TLS, database, baseline revision, exact schema,
+empty account/activity tables, and initial program/reward; then requires the
+exact confirmation `SEED green-credit-84686249 br-young-sea-begys0tt vinculo_demo`.
+It next prompts twice for three unique passwords (minimum 24 characters)
+without echo. It creates only the three fictional role accounts and the
+customer member. It does not migrate, overwrite, retry, print passwords, or log
+database exception details. On any mismatch it stops without seeding.
 
-       export VINCULO_REMOTE_SEED_ENABLED=true
-       export VINCULO_SEED_PROJECT_SLUG=vinculo-public-demo
-       export VINCULO_SEED_PROJECT_ID='verified-project-id'
-       export VINCULO_SEED_BRANCH_ID='verified-branch-id'
-       export VINCULO_SEED_BRANCH_NAME='verified-branch-name'
-       export VINCULO_SEED_ALLOWED_HOST='verified-direct-host.neon.tech'
-       export VINCULO_SEED_ALLOWED_DATABASE=vinculo_demo
-       export VINCULO_SEED_DATABASE_URL="$DATABASE_URL"
-       read -s 'NEON_API_KEY?Neon API key: '; echo
-       export NEON_API_KEY
+Afterward, unset the sensitive and one-shot variables and revoke the temporary
+key by its key ID:
 
-   Never place a secret literally into a command line or tracked file.
-7. Run uv run python -m app.scripts.seed_remote_demo interactively. It checks
-   the Neon project, branch, and exact write endpoint through Neon’s API; checks
-   the host, TLS, database name, fresh baseline revision, exact table set,
-   empty account/activity tables and the expected demo program/reward; then
-   asks the operator to confirm project/branch/database and enter three
-   unique passwords (minimum 24 characters) twice each without echo. It creates
-   only the three fictional role accounts and the customer member. It does not
-   migrate, overwrite, retry, print passwords, or log database exception
-   details. On any mismatch it stops without seeding.
-8. Remove the one-shot environment variables and revoke the temporary Neon API
-   key. Verify the three roles with non-secret checks, then deploy only a
-   protected Preview and test it before changing public access.
+    unset NEON_API_KEY VINCULO_SEED_DATABASE_URL VINCULO_REMOTE_SEED_ENABLED
+    unset VINCULO_SEED_PROJECT_SLUG VINCULO_SEED_PROJECT_ID VINCULO_SEED_BRANCH_ID
+    unset VINCULO_SEED_BRANCH_NAME VINCULO_SEED_ALLOWED_HOST VINCULO_SEED_ALLOWED_DATABASE
+    neon api-keys revoke <key-id> --org-id org-mute-truth-19758563
 
-The remote seed deliberately rejects a database that is not exactly the fresh
-0001_vinculo_baseline schema or whose initial loyalty program/reward differ
-from the frozen fictional template. To reset evaluators later, provision a
-separate fresh demo database and repeat the authorized procedure; do not turn
-this one-shot seed into an overwrite/reset command.
+The remote seed deliberately rejects a database that is not exactly the
+`0001_vinculo_baseline` schema or whose initial program/reward differ from the
+fictional template. To reset later, provision a separate fresh demo database;
+do not turn this one-shot seed into an overwrite/reset command.
 
 ## Preflight and validation
 
