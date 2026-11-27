@@ -15,6 +15,7 @@ Vínculo is an independent digital loyalty MVP for neighborhood stores. It suppo
 - `apps/web`: standalone Next.js experience with login, cartilla, caja ficticia, and owner dashboard.
 - `docs/ARCHITECTURE.md`: module boundaries and data model.
 - `docs/INSTALL.md`: local setup and safe demo seeding.
+- `docs/DEPLOYMENT.md`: isolated Vercel Services and remote demo-seed procedure.
 - `docs/TECHNICAL_HANDOFF.md`: current onboarding and engineering handoff.
 - `docs/VINCULO_INTELLIGENCE_BACKLOG.md`: next product work.
 

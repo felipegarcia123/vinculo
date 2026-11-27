@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { api } from "@/lib/api";
+import { homeForRole } from "@/lib/auth-routing.mjs";
 import { VinculoBrand } from "@/components/VinculoBrand";
 
 export default function LoginPage() {
@@ -15,9 +16,7 @@ export default function LoginPage() {
     event.preventDefault(); setBusy(true); setError("");
     try {
       const user = await api.login(username, password);
-      const demoOnly = process.env.NEXT_PUBLIC_VINCULO_DEMO_ONLY === "true";
-      window.location.assign(user.role === "customer" ? "/loyalty"
-        : demoOnly ? (user.role === "owner" ? "/loyalty/owner" : "/loyalty/cashier") : "/");
+      window.location.assign(homeForRole(user.role));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "No fue posible iniciar sesión");
       setBusy(false);

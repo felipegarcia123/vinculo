@@ -1,22 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { stripChatgptUtmSource } from "@/lib/cleanChatgptUtm.mjs";
 
 const pages = new Set(["/login", "/loyalty", "/loyalty/owner", "/loyalty/cashier"]);
 
 export function proxy(request: NextRequest) {
   const cleanUrl = new URL(request.url);
-  const rawParams = cleanUrl.search.slice(1).split("&").filter(Boolean);
-  let removedChatGptSource = false;
-  const remainingParams = rawParams.filter((part) => {
-    const entry = new URLSearchParams(part).entries().next().value;
-    const [key, value] = entry ?? ["", ""];
-    if (key === "utm_source" && value === "chatgpt.com") {
-      removedChatGptSource = true;
-      return false;
-    }
-    return true;
-  });
-  if (removedChatGptSource) {
-    cleanUrl.search = remainingParams.length ? `?${remainingParams.join("&")}` : "";
+  if (stripChatgptUtmSource(cleanUrl)) {
     return NextResponse.redirect(cleanUrl);
   }
 
