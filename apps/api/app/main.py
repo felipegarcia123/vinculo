@@ -44,7 +44,10 @@ ALLOWED_DEMO_API_EXACT = {
 @app.middleware("http")
 async def restrict_demo_surface(request: Request, call_next):
     if settings.vinculo_demo_only and request.url.path.startswith("/api/"):
-        key = (request.method.upper(), request.url.path.rstrip("/") or "/")
+        method = request.method.upper()
+        if method == "OPTIONS" and request.headers.get("origin"):
+            method = request.headers.get("access-control-request-method", "").upper()
+        key = (method, request.url.path.rstrip("/") or "/")
         if key not in ALLOWED_DEMO_API_EXACT:
             return JSONResponse(status_code=404, content={"detail": "Ruta no disponible en Vínculo"},
                                 headers={"Cache-Control": "no-store"})
