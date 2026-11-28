@@ -68,6 +68,25 @@ def test_five_eligible_purchases_stamp_once_redeem_once(auth_context):
     assert second.json()["already_consumed"] is True and second.json()["balance"] == 0
     assert db.scalar(select(func.count()).select_from(LoyaltyRedemption)) == 1
     assert db.scalar(select(func.sum(LoyaltyStampEntry.amount))) == 0
+    another_qr = customer.post("/api/v1/loyalty/qr", json={
+        "purpose": "redemption", "reward_id": str(reward.id)}, headers=csrf_headers(customer))
+    assert another_qr.status_code == 409
+    assert db.scalar(select(func.count()).select_from(LoyaltyRedemption)) == 1
+    assert db.scalar(select(func.count()).select_from(LoyaltyStampEntry).where(
+        LoyaltyStampEntry.amount < 0)) == 1
+
+
+def test_zero_balance_cannot_issue_redemption_qr(auth_context):
+    db, _, _, _, reward = auth_context
+    from app.main import app
+    customer = TestClient(app)
+    assert login(customer, "customer-test").status_code == 200
+
+    response = customer.post("/api/v1/loyalty/qr", json={
+        "purpose": "redemption", "reward_id": str(reward.id)}, headers=csrf_headers(customer))
+    assert response.status_code == 409
+    assert db.scalar(select(func.count()).select_from(LoyaltyRedemption)) == 0
+    assert db.scalar(select(func.count()).select_from(LoyaltyStampEntry)) == 0
 
 
 def test_expired_qr_does_not_create_purchase_or_stamp(auth_context):
