@@ -1,5 +1,9 @@
 # Local installation
 
+For the existing Windows laboratory on `127.0.0.1:3100`, `:8100`, and `:55492`,
+use [WINDOWS_LAB_001B.md](WINDOWS_LAB_001B.md). The steps below describe a new
+installation and use example ports and environment files.
+
 ## Requirements
 
 - Python 3.12
